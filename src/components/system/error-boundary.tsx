@@ -396,7 +396,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     this.setState({ errorInfo });
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (import.meta.env.MODE !== 'production') {
       // eslint-disable-next-line no-console
       console.error('[error-boundary] caught error:', error, errorInfo);
     }
@@ -426,7 +426,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       try {
         queryClient.clear();
       } catch (e) {
-        if (process.env.NODE_ENV !== 'production') {
+        if (import.meta.env.MODE !== 'production') {
           // eslint-disable-next-line no-console
           console.warn('[error-boundary] failed to clear query cache', e);
         }

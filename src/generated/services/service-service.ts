@@ -1,6 +1,7 @@
-import { getClient } from '../../../app-gen-sdk/data';
+import { getEkaServices } from '@/lib/eka-api';
+import { getClient } from '@/lib/api-client';
 import type { Service } from '../models/service-model';
-import type { IOperationOptions } from '../../../app-gen-sdk/data/common/types';
+import type { IOperationOptions } from '@/lib/api-client';
 
 const DATA_SOURCE_NAME = 'Service';
 
@@ -26,14 +27,13 @@ export class ServiceService {
   }
 
   static async get(id: string): Promise<Service> {
-    const result = await getClient().retrieveRecordAsync(DATA_SOURCE_NAME, id);
-    if (!result.success) throw result.error;
-    return result.data as Service;
+    const services = await getEkaServices();
+    const service = services.find((item) => item.id === id);
+    if (!service) throw new Error('Service not found');
+    return service;
   }
 
   static async getAll(options?: IOperationOptions): Promise<Service[]> {
-    const result = await getClient().retrieveMultipleRecordsAsync(DATA_SOURCE_NAME, options);
-    if (!result.success) throw result.error;
-    return result.data as Service[];
+    return getEkaServices(options);
   }
 }

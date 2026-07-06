@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.vercel/
+output/
+tmp/
+docs/~$*.docx
+public/*.CR2
+.env
+.env.*
+!.env.example
+*.log
+
+
+.vercel
+.env*

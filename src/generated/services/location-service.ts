@@ -1,6 +1,7 @@
-import { getClient } from '../../../app-gen-sdk/data';
+import { getEkaClinic, getEkaClinics } from '@/lib/eka-api';
+import { getClient } from '@/lib/api-client';
 import type { Location } from '../models/location-model';
-import type { IOperationOptions } from '../../../app-gen-sdk/data/common/types';
+import type { IOperationOptions } from '@/lib/api-client';
 
 const DATA_SOURCE_NAME = 'Location';
 
@@ -26,14 +27,10 @@ export class LocationService {
   }
 
   static async get(id: string): Promise<Location> {
-    const result = await getClient().retrieveRecordAsync(DATA_SOURCE_NAME, id);
-    if (!result.success) throw result.error;
-    return result.data as Location;
+    return getEkaClinic(id);
   }
 
   static async getAll(options?: IOperationOptions): Promise<Location[]> {
-    const result = await getClient().retrieveMultipleRecordsAsync(DATA_SOURCE_NAME, options);
-    if (!result.success) throw result.error;
-    return result.data as Location[];
+    return getEkaClinics(options);
   }
 }

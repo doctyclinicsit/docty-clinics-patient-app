@@ -11,6 +11,8 @@ export const LocationSchema = z.object({
   imageUrl: z.string().optional(),
   open247: z.boolean(),
   phone: z.string().min(1, { message: "Phone is required" }),
+  lat: z.number().optional(),
+  lon: z.number().optional(),
   services: z.string().optional(),
 });
 

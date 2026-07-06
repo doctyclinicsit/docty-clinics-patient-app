@@ -1,5 +1,57 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/pharmacy-inventory-sync",
+      "schedule": "0 */2 * * *"
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/services", "destination": "/index.html" },
+    { "source": "/health-plans", "destination": "/index.html" },
+    { "source": "/packages", "destination": "/index.html" },
+    { "source": "/lab-tests", "destination": "/index.html" },
+    { "source": "/locations", "destination": "/index.html" },
+    { "source": "/locations/:id", "destination": "/index.html" },
+    { "source": "/book-appointment", "destination": "/index.html" },
+    { "source": "/doctor/:id", "destination": "/index.html" },
+    { "source": "/doctor-dashboard", "destination": "/index.html" },
+    { "source": "/patient", "destination": "/index.html" },
+    { "source": "/pharmacy", "destination": "/index.html" },
+    { "source": "/pharmacy/delivery/:token", "destination": "/index.html" },
+    { "source": "/pharmacy/:orderId", "destination": "/index.html" },
+    { "source": "/executive/dashboard", "destination": "/index.html" },
+    { "source": "/executive/dashboard/share/:token", "destination": "/index.html" },
+    { "source": "/staff", "destination": "/index.html" },
+    { "source": "/staff/cards", "destination": "/index.html" },
+    { "source": "/staff/pharmacy-billing", "destination": "/index.html" },
+    { "source": "/staff/leads", "destination": "/index.html" },
+    { "source": "/staff/doctor-payout", "destination": "/index.html" },
+    { "source": "/staff/franchise-dashboard", "destination": "/index.html" },
+    { "source": "/staff/franchise-opportunity", "destination": "/index.html" },
+    { "source": "/staff/system-logs", "destination": "/index.html" },
+    { "source": "/franchise", "destination": "/index.html" },
+    { "source": "/franchise/opportunity/:shareToken", "destination": "/index.html" },
+    { "source": "/privacy-policy", "destination": "/index.html" },
+    { "source": "/terms", "destination": "/index.html" },
+    { "source": "/medical-disclaimer", "destination": "/index.html" },
+    { "source": "/cancellation-refund-policy", "destination": "/index.html" },
+    { "source": "/consent-notice", "destination": "/index.html" },
+    { "source": "/grievance", "destination": "/index.html" },
+    { "source": "/cookie-policy", "destination": "/index.html" },
+    { "source": "/children-dependants", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/doctor/:id",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
   ]
 }

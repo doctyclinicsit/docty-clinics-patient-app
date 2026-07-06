@@ -1,5 +1,16 @@
 import type { Location } from './location-model';
 
+export interface DoctorClinicProfile {
+  id: string;
+  name1: string;
+  address?: string;
+  phone?: string;
+  amenities?: string[];
+  imageUrls?: string[];
+  services?: string[];
+  timings?: string[];
+}
+
 export interface Doctor {
   /**
    * @displayName Doctor ID
@@ -31,6 +42,10 @@ export interface Doctor {
    */
   imageURL?: string;
   /**
+   * @displayName Intro
+   */
+  intro?: string;
+  /**
    * @displayName Is Available
    * @validationRule Required for create/update operations
    */
@@ -44,9 +59,17 @@ export interface Doctor {
    */
   location?: Pick<Location, 'id' | 'name1'>;
   /**
+   * @displayName Locations
+   */
+  locations?: Pick<Location, 'id' | 'name1'>[];
+  /**
    * @displayName Next Available Slot
    */
   nextAvailableSlot?: string;
+  /**
+   * @displayName Public Profile Slug
+   */
+  publicProfileSlug?: string;
   /**
    * @displayName Qualifications
    */
@@ -60,9 +83,21 @@ export interface Doctor {
    */
   registrationNumber?: string;
   /**
+   * @displayName Registration Council
+   */
+  registrationCouncil?: string;
+  /**
+   * @displayName Clinic Profiles
+   */
+  clinicProfiles?: DoctorClinicProfile[];
+  /**
    * @displayName Services Offered
    */
   servicesOffered?: string;
+  /**
+   * Doctor-specific services configured in Eka.
+   */
+  doctorServices?: string[];
   /**
    * @displayName Specialty
    * @validationRule Required for create/update operations

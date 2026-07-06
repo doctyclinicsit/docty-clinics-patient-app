@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="402" height="70" viewBox="0 0 402 70" role="img" aria-label="Docty.Pharmacy">
+  <rect width="402" height="70" fill="white"/>
+  <path fill="#fe065c" d="M24 11a9 9 0 0 1 9-9h4a9 9 0 0 1 9 9v43a9 9 0 0 1-9 9h-4a9 9 0 0 1-9-9z"/>
+  <path fill="#0bb8fc" d="M5 29a9 9 0 0 1 9-9h43a9 9 0 0 1 9 9v4a9 9 0 0 1-9 9H14a9 9 0 0 1-9-9z"/>
+  <path fill="white" d="M28 24h14v8h-14zM31 21h8v14h-8z"/>
+  <text x="82" y="47" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="800" letter-spacing="0">
+    <tspan fill="#ed001c">Docty</tspan><tspan fill="#007dc5">.Pharmacy</tspan>
+  </text>
+</svg>

@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { LocationService } from "../services/location-service";
 import type { Location } from "../models/location-model";
-import type { IOperationOptions } from '../../../app-gen-sdk/data/common/types';
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import type { IOperationOptions } from '@/lib/api-client';
 
 /**
  * Retrieve all Location records with optional filtering and sorting.
@@ -26,7 +24,7 @@ export function useLocation(id: string) {
   return useQuery({
     queryKey: ["location", id],
     queryFn: () => LocationService.get(id),
-    enabled: !!id && UUID_REGEX.test(id),
+    enabled: !!id,
   });
 }
 

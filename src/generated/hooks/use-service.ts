@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ServiceService } from "../services/service-service";
 import type { Service } from "../models/service-model";
-import type { IOperationOptions } from '../../../app-gen-sdk/data/common/types';
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import type { IOperationOptions } from '@/lib/api-client';
 
 /**
  * Retrieve all Service records with optional filtering and sorting.
@@ -15,6 +13,8 @@ export function useServiceList(options?: IOperationOptions) {
   return useQuery({
     queryKey: ["service-list", options],
     queryFn: () => ServiceService.getAll(options),
+    refetchOnMount: "always",
+    retry: 2,
   });
 }
 
@@ -26,7 +26,7 @@ export function useService(id: string) {
   return useQuery({
     queryKey: ["service", id],
     queryFn: () => ServiceService.get(id),
-    enabled: !!id && UUID_REGEX.test(id),
+    enabled: !!id,
   });
 }
 

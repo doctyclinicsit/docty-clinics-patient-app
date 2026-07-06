@@ -29,6 +29,12 @@ export interface Service {
    * @displayName Icon Name
    */
   iconName?: string;
+  /**
+   * Structured service price from Eka. This is retained for booking workflows
+   * but is not displayed on the Services page.
+   */
+  price?: number;
+  currency?: string;
 }
 
 export const _Service = 'Service' as const;

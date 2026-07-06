@@ -2,24 +2,41 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Provider as JotaiProvider } from 'jotai';
-import { initialize } from '@microsoft/power-apps/app';
 
 import Layout from '@/pages/_layout';
 import { queryClient } from '@/lib/query-client';
 import { Toaster } from '@/components/ui/sonner';
 import ErrorBoundary from '@/components/system/error-boundary';
+import { initialize } from '@/lib/api-client';
 
 import HomePage from '@/pages/index';
 import ServicesPage from '@/pages/services';
 import HealthPlansPage from '@/pages/health-plans';
 import PackagesPage from '@/pages/packages';
+import LabTestsPage from '@/pages/lab-tests';
 import LocationsPage from '@/pages/locations';
+import ClinicDetailsPage from '@/pages/clinic-details';
 import BookAppointmentPage from '@/pages/book-appointment';
 import DoctorProfilePage from '@/pages/doctor-profile';
+import PatientPortalPage from '@/pages/patient-portal';
+import PharmacyPage from '@/pages/pharmacy';
+import PharmacyDeliveryLinkPage from '@/pages/pharmacy-delivery-link';
+import LegalPage from '@/pages/legal';
+import StaffCardsPage from '@/pages/staff-cards';
+import StaffPharmacyBillingPage from '@/pages/staff-pharmacy-billing';
+import StaffDoctorPayoutPage from '@/pages/staff-doctor-payout';
+import StaffExecutiveDashboardPage from '@/pages/staff-executive-dashboard';
+import StaffFranchiseDashboardPage from '@/pages/staff-franchise-dashboard';
+import StaffFranchiseOpportunityPage from '@/pages/staff-franchise-opportunity';
+import StaffLeadsPage from '@/pages/staff-leads';
+import StaffSystemLogsPage from '@/pages/staff-system-logs';
+import FranchiseOpportunityPage from '@/pages/franchise-opportunity';
+import DoctorDashboardPage from '@/pages/doctor-dashboard';
 import NotFoundPage from '@/pages/not-found';
 
 function App() {
   useEffect(() => {
+    document.title = 'Docty Clinics - Your Neighbourhood Clinics';
     initialize();
   }, []);
   return (
@@ -34,9 +51,39 @@ function App() {
                 <Route path="services" element={<ServicesPage />} />
                 <Route path="health-plans" element={<HealthPlansPage />} />
                 <Route path="packages" element={<PackagesPage />} />
+                <Route path="lab-tests" element={<LabTestsPage />} />
                 <Route path="locations" element={<LocationsPage />} />
+                <Route path="locations/:id" element={<ClinicDetailsPage />} />
                 <Route path="book-appointment" element={<BookAppointmentPage />} />
                 <Route path="doctor/:id" element={<DoctorProfilePage />} />
+                <Route path="doctor-dashboard" element={<DoctorDashboardPage />} />
+                <Route path="patient" element={<PatientPortalPage />} />
+                <Route path="pharmacy" element={<PharmacyPage />} />
+                <Route path="pharmacy/delivery/:token" element={<PharmacyDeliveryLinkPage />} />
+                <Route path="staff" element={<StaffCardsPage />} />
+                <Route path="staff/cards" element={<StaffCardsPage />} />
+                <Route path="staff/pharmacy-billing" element={<StaffPharmacyBillingPage />} />
+                <Route path="staff/leads" element={<StaffLeadsPage />} />
+                <Route path="staff/doctor-payout" element={<StaffDoctorPayoutPage />} />
+                <Route path="executive/dashboard" element={<StaffExecutiveDashboardPage />} />
+                <Route path="executive/dashboard/share/:shareToken" element={<StaffExecutiveDashboardPage />} />
+                <Route path="staff/franchise-dashboard" element={<StaffFranchiseDashboardPage />} />
+                <Route path="staff/franchise-opportunity" element={<StaffFranchiseOpportunityPage />} />
+                <Route path="staff/system-logs" element={<StaffSystemLogsPage />} />
+                <Route path="franchise" element={<StaffFranchiseDashboardPage />} />
+                <Route path="franchise/opportunity/:shareToken" element={<FranchiseOpportunityPage />} />
+                {[
+                  'privacy-policy',
+                  'terms',
+                  'medical-disclaimer',
+                  'cancellation-refund-policy',
+                  'consent-notice',
+                  'grievance',
+                  'cookie-policy',
+                  'children-dependants',
+                ].map((path) => (
+                  <Route key={path} path={path} element={<LegalPage />} />
+                ))}
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>

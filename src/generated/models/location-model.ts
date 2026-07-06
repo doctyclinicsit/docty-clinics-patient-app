@@ -36,6 +36,14 @@ export interface Location {
    */
   phone: string;
   /**
+   * @displayName Latitude
+   */
+  lat?: number;
+  /**
+   * @displayName Longitude
+   */
+  lon?: number;
+  /**
    * @displayName Services
    */
   services?: string;

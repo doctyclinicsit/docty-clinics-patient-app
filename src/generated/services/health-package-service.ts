@@ -1,6 +1,6 @@
-import { getClient } from '../../../app-gen-sdk/data';
+import { getClient } from '@/lib/api-client';
 import type { HealthPackage } from '../models/health-package-model';
-import type { IOperationOptions } from '../../../app-gen-sdk/data/common/types';
+import type { IOperationOptions } from '@/lib/api-client';
 
 const DATA_SOURCE_NAME = 'HealthPackage';
 

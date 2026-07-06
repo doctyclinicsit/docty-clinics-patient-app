@@ -1,12 +1,11 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
-/* Docty Clinics Custom Fonts - System fonts with rounded feel */
 @theme inline {
-  --font-display: 'Segoe UI', 'SF Pro Rounded', system-ui, sans-serif;
-  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Poppins', 'Segoe UI', system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -47,41 +46,38 @@
 
 :root {
   --radius: 0.75rem;
-  /* Docty Clinics Brand - Light Theme */
-  --background: oklch(0.995 0 0);
-  --foreground: oklch(0.18 0.02 280);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 280);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 280);
-  /* Vibrant Red #FE065C as Primary */
-  --primary: oklch(0.60 0.25 12);
-  --primary-foreground: oklch(1 0 0);
-  /* Vibrant Blue #0BB8FC as Secondary/Accent */
-  --secondary: oklch(0.75 0.15 220);
-  --secondary-foreground: oklch(0.15 0 0);
-  --muted: oklch(0.97 0.005 280);
-  --muted-foreground: oklch(0.38 0.02 280);
-  --accent: oklch(0.75 0.15 220);
-  --accent-foreground: oklch(0.15 0 0);
-  --skeleton: oklch(0.95 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.01 280);
-  --input: oklch(0.92 0.01 280);
-  --ring: oklch(0.60 0.25 12);
-  --chart-1: oklch(0.60 0.25 12);
-  --chart-2: oklch(0.75 0.15 220);
+  --background: #ffffff;
+  --foreground: #082f49;
+  --card: #ffffff;
+  --card-foreground: #082f49;
+  --popover: #ffffff;
+  --popover-foreground: #082f49;
+  --primary: #fe065c;
+  --primary-foreground: #ffffff;
+  --secondary: #0bb8fc;
+  --secondary-foreground: #ffffff;
+  --muted: #f4f9fc;
+  --muted-foreground: #476477;
+  --accent: #0bb8fc;
+  --accent-foreground: #ffffff;
+  --skeleton: #eaf3f8;
+  --destructive: #d92d20;
+  --border: #dceaf1;
+  --input: #cfe1ea;
+  --ring: #fe065c;
+  --chart-1: #fe065c;
+  --chart-2: #0bb8fc;
   --chart-3: oklch(0.65 0.18 150);
   --chart-4: oklch(0.75 0.20 80);
   --chart-5: oklch(0.55 0.20 300);
-  --sidebar: oklch(0.99 0 0);
-  --sidebar-foreground: oklch(0.18 0.02 280);
-  --sidebar-primary: oklch(0.60 0.25 12);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.97 0.005 280);
-  --sidebar-accent-foreground: oklch(0.18 0.02 280);
-  --sidebar-border: oklch(0.92 0.01 280);
-  --sidebar-ring: oklch(0.60 0.25 12);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #082f49;
+  --sidebar-primary: #fe065c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaf8fe;
+  --sidebar-accent-foreground: #082f49;
+  --sidebar-border: #dceaf1;
+  --sidebar-ring: #fe065c;
 }
 
 .dark {
@@ -123,11 +119,39 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground max-w-full overflow-x-hidden;
     font-family: var(--font-body);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  html,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    color: #ffffff;
+    background: #fe065c;
+  }
+
+  @media (max-width: 767px) {
+    body:has([data-slot='dialog-overlay'][data-state='open']) [data-mobile-navigation] {
+      display: none;
+    }
   }
 }

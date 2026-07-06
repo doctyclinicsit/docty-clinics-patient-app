@@ -1,6 +1,7 @@
-import { getClient } from '../../../app-gen-sdk/data';
+import { getEkaDoctor, getEkaDoctors } from '@/lib/eka-api';
+import { getClient } from '@/lib/api-client';
 import type { Doctor } from '../models/doctor-model';
-import type { IOperationOptions } from '../../../app-gen-sdk/data/common/types';
+import type { IOperationOptions } from '@/lib/api-client';
 
 const DATA_SOURCE_NAME = 'Doctor';
 
@@ -26,14 +27,10 @@ export class DoctorService {
   }
 
   static async get(id: string): Promise<Doctor> {
-    const result = await getClient().retrieveRecordAsync(DATA_SOURCE_NAME, id);
-    if (!result.success) throw result.error;
-    return result.data as Doctor;
+    return getEkaDoctor(id);
   }
 
   static async getAll(options?: IOperationOptions): Promise<Doctor[]> {
-    const result = await getClient().retrieveMultipleRecordsAsync(DATA_SOURCE_NAME, options);
-    if (!result.success) throw result.error;
-    return result.data as Doctor[];
+    return getEkaDoctors(options);
   }
 }

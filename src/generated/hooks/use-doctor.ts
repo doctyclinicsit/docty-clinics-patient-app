@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DoctorService } from "../services/doctor-service";
 import type { Doctor } from "../models/doctor-model";
-import type { IOperationOptions } from '../../../app-gen-sdk/data/common/types';
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import type { IOperationOptions } from '@/lib/api-client';
 
 /**
  * Retrieve all Doctor records with optional filtering and sorting.
@@ -26,7 +24,7 @@ export function useDoctor(id: string) {
   return useQuery({
     queryKey: ["doctor", id],
     queryFn: () => DoctorService.get(id),
-    enabled: !!id && UUID_REGEX.test(id),
+    enabled: !!id,
   });
 }
 
