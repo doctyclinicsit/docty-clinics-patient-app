@@ -1,4 +1,5 @@
 import { readStaffSession, staffSessionSecret } from '../../server/staff-session.js';
+import { getStaffModuleAccess } from '../../server/staff-access.js';
 
 export default async function handler(request: any, response: any) {
   response.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -13,6 +14,7 @@ export default async function handler(request: any, response: any) {
 
   const session = readStaffSession(request.headers.cookie, secret);
   if (!session) return response.status(401).json({ authenticated: false });
+  const moduleAccess = await getStaffModuleAccess(session);
 
   return response.status(200).json({
     authenticated: true,
@@ -22,6 +24,7 @@ export default async function handler(request: any, response: any) {
       name: session.name || '',
       role: session.staffRole || '',
       isAdmin: Boolean(session.isAdmin),
+      moduleAccess,
     },
   });
 }

@@ -4,6 +4,7 @@ import {
   createStaffSessionToken,
   staffSessionSecret,
 } from '../../server/staff-session.js';
+import { getStaffModuleAccess } from '../../server/staff-access.js';
 
 export default async function handler(request: any, response: any) {
   response.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -55,6 +56,7 @@ export default async function handler(request: any, response: any) {
       staffRole: staffUser.role,
       isAdmin: isEkaStaffAdmin(staffUser),
     });
+    const moduleAccess = await getStaffModuleAccess({ mobile, isAdmin: isEkaStaffAdmin(staffUser) });
     response.setHeader('Set-Cookie', createStaffSessionCookie(session.token, session.maxAge));
     return response.status(200).json({
       authenticated: true,
@@ -64,6 +66,7 @@ export default async function handler(request: any, response: any) {
         mobile,
         role: staffUser.role || '',
         isAdmin: isEkaStaffAdmin(staffUser),
+        moduleAccess,
       },
     });
   } catch (error) {

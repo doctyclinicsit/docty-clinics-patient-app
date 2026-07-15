@@ -126,7 +126,7 @@ export default function LabTestsPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['lab-tests-catalog'],
     queryFn: fetchLabTests,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60 * 2,
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');

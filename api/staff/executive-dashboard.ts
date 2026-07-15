@@ -27,10 +27,13 @@ import {
   EXECUTIVE_LANCO_OPEX_DATA_ISSUES,
   EXECUTIVE_LANCO_OPEX_ROWS,
 } from '../../server/executive-lanco-opex.js';
-
-const EXECUTIVE_DASHBOARD_SHARE_TOKEN =
-  process.env.EXECUTIVE_DASHBOARD_SHARE_TOKEN || 'dcty-investor-2026-6fb7b688c6fd4b8fbf61a95e8c1b35d2';
-const EXECUTIVE_DASHBOARD_SHARE_CODE = process.env.EXECUTIVE_DASHBOARD_SHARE_CODE || '742619';
+import { EXECUTIVE_MANUAL_INCOME_ROWS } from '../../server/executive-manual-income.js';
+import {
+  EXECUTIVE_DASHBOARD_SHARE_TOKEN,
+  generateExecutiveDashboardShareCode,
+  readExecutiveDashboardShare,
+  verifyExecutiveDashboardShareCode,
+} from '../../server/executive-dashboard-share.js';
 
 interface ExecutiveSalesRow {
   date: string;
@@ -97,28 +100,46 @@ function formatSourceRange(rows: ExecutiveSalesRow[]) {
 }
 
 export default async function handler(request: any, response: any) {
-  if (request.method !== 'GET') {
-    response.setHeader('Allow', 'GET');
+  if (!['GET', 'POST'].includes(request.method)) {
+    response.setHeader('Allow', 'GET, POST');
     return response.status(405).json({ message: 'Method not allowed.' });
   }
 
   const adminSession = readAdminStaffSession(request.headers.cookie);
+  const isAdmin = adminSession.status === 200;
+  const adminRecord = isAdmin ? (adminSession as any).session : undefined;
+  const adminActor = adminRecord?.name || adminRecord?.mobile || '';
+
+  if (request.method === 'POST') {
+    if (!isAdmin) {
+      return response.status(401).json({ message: 'Please sign in as an admin staff member.' });
+    }
+    if (text(request.body?.action) !== 'share') {
+      return response.status(400).json({ message: 'Unsupported executive dashboard action.' });
+    }
+    const share = await generateExecutiveDashboardShareCode(adminActor);
+    response.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    return response.status(200).json(share);
+  }
+
   const shareToken = text(request.query?.shareToken);
   const shareCode = text(request.query?.shareCode);
   const hasShareToken = shareToken && shareToken === EXECUTIVE_DASHBOARD_SHARE_TOKEN;
-  const hasShareAccess = hasShareToken && shareCode === EXECUTIVE_DASHBOARD_SHARE_CODE;
-  if (adminSession.status !== 200 && hasShareToken && !hasShareAccess) {
+  const hasShareAccess = await verifyExecutiveDashboardShareCode(shareToken, shareCode);
+  if (!isAdmin && hasShareToken && !hasShareAccess) {
     return response.status(403).json({ message: 'Please enter the 6-digit investor access code.' });
   }
-  if (adminSession.status !== 200 && !hasShareAccess) {
+  if (!isAdmin && !hasShareAccess) {
     return response.status(401).json({ message: 'Please sign in as an admin staff member.' });
   }
+  const shareInfo = isAdmin ? await readExecutiveDashboardShare() : undefined;
 
   const allRows: ExecutiveSalesRow[] = [
     ...EXECUTIVE_MANIKONDA_2025_SALES_ROWS.map(historicalRowWithLocation),
     ...HISTORICAL_SALES_ROWS.map(historicalRowWithLocation),
     ...EXECUTIVE_JUNE_CLINIC_SALES_ROWS,
     ...EXECUTIVE_JUNE_PHARMACY_SALES_ROWS,
+    ...EXECUTIVE_MANUAL_INCOME_ROWS,
   ].sort((a, b) => a.date.localeCompare(b.date) || a.location.localeCompare(b.location) || a.category.localeCompare(b.category));
   const allDates = allRows.map((row) => row.date).sort();
   const fallbackEndDate = allDates.at(-1) || todayDate();
@@ -378,6 +399,7 @@ export default async function handler(request: any, response: any) {
     ),
     categories: Array.from(new Set(allRows.map((row) => row.category))).sort(),
     locations: Array.from(new Set(allRows.map((row) => row.location))).sort(),
+    share: isAdmin ? shareInfo : undefined,
     totals: {
       revenue: totalRevenue,
       footfall: totalFootfall,

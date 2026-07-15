@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   CalendarDays,
+  Copy,
   Database,
   FileSpreadsheet,
   Filter,
@@ -12,6 +13,7 @@ import {
   MessageCircle,
   RefreshCw,
   Send,
+  Share2,
   ShoppingCart,
 } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart as RechartsLineChart, Pie, PieChart, XAxis, YAxis } from 'recharts';
@@ -213,6 +215,13 @@ interface DashboardResponse {
   pharmacy: PharmacyDashboard;
   daily: DailyRow[];
   rows: HistoricalRow[];
+  share?: {
+    shareToken: string;
+    shareCode?: string;
+    shareCodeExpiresAt?: string;
+    updatedBy?: string;
+    updatedAt?: string;
+  };
 }
 
 const revenueChartConfig = {
@@ -403,12 +412,17 @@ export default function StaffExecutiveDashboardPage() {
   const [isAssistantLoading, setIsAssistantLoading] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [shareAccessCode, setShareAccessCode] = useState('');
   const [isShareUnlocked, setIsShareUnlocked] = useState(!isSharedInvestorView);
   const [opexCategoryFilter, setOpexCategoryFilter] = useState('all');
   const [opexDetailPage, setOpexDetailPage] = useState(1);
 
   const shareAccessStorageKey = shareToken ? `executive-dashboard-share-code:${shareToken}` : '';
+  const dashboardShareUrl =
+    typeof window !== 'undefined' && dashboard?.share?.shareToken
+      ? `${window.location.origin}/executive/dashboard/share/${dashboard.share.shareToken}`
+      : '';
   const topCategory = dashboard?.categoriesSummary[0];
   const recentRows = useMemo(() => (dashboard?.rows || []).slice(0, 60), [dashboard?.rows]);
   const footfallTrendMode = useMemo<'daily' | 'weekly' | 'monthly'>(() => {
@@ -738,6 +752,43 @@ export default function StaffExecutiveDashboardPage() {
     await loadDashboard({ shareCode: code });
   };
 
+  const copyExecutiveDashboardShare = async (text: string) => {
+    if (!navigator.clipboard) {
+      toast.error('Clipboard access is not available in this browser.');
+      return false;
+    }
+    await navigator.clipboard.writeText(text);
+    return true;
+  };
+
+  const generateDashboardShare = async () => {
+    if (isSharedInvestorView) return;
+    setIsGeneratingShare(true);
+    try {
+      const response = await fetch('/api/executive-dashboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ action: 'share' }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.message || 'Unable to generate private dashboard access code.');
+      const shareUrl = `${window.location.origin}/executive/dashboard/share/${body.shareToken}`;
+      const shareText = [
+        'Docty Executive Dashboard',
+        shareUrl,
+        `Access code: ${body.shareCode}`,
+        `Valid till: ${body.shareCodeExpiresAt ? new Date(body.shareCodeExpiresAt).toLocaleString('en-IN') : '24 hours'}`,
+      ].join('\n');
+      setDashboard((current) => (current ? { ...current, share: body } : current));
+      await copyExecutiveDashboardShare(shareText);
+      toast.success('Fresh private dashboard link and access code copied. Valid for 24 hours.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to generate private dashboard access code.');
+    } finally {
+      setIsGeneratingShare(false);
+    }
+  };
+
   const applyDatePreset = (preset: DatePresetKey) => {
     const range = getDatePresetRange(preset, {
       firstDate: dashboard?.source.firstDate,
@@ -921,6 +972,61 @@ export default function StaffExecutiveDashboardPage() {
               ) : null}
             </div>
           </div>
+
+          {!isSharedInvestorView && (
+            <div className="mt-4 flex flex-col gap-3 rounded-lg border bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-foreground">Investor share access</span>
+                  {dashboard?.share?.shareCode ? (
+                    <Badge variant="secondary" className="rounded-md">
+                      Code {dashboard.share.shareCode}
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="mt-1 break-all text-muted-foreground">
+                  {dashboardShareUrl || 'Generate a temporary private link for investor review.'}
+                </p>
+                {dashboard?.share?.shareCodeExpiresAt ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Valid till {new Date(dashboard.share.shareCodeExpiresAt).toLocaleString('en-IN')}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {dashboardShareUrl && dashboard?.share?.shareCode ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() =>
+                      void copyExecutiveDashboardShare(
+                        [
+                          'Docty Executive Dashboard',
+                          dashboardShareUrl,
+                          `Access code: ${dashboard.share?.shareCode || ''}`,
+                          `Valid till: ${
+                            dashboard.share?.shareCodeExpiresAt
+                              ? new Date(dashboard.share.shareCodeExpiresAt).toLocaleString('en-IN')
+                              : '24 hours'
+                          }`,
+                        ].join('\n')
+                      ).then((copied) => {
+                        if (copied) toast.success('Private dashboard link copied.');
+                      })
+                    }
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy
+                  </Button>
+                ) : null}
+                <Button type="button" className="gap-2" onClick={() => void generateDashboardShare()} disabled={isGeneratingShare}>
+                  {isGeneratingShare ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+                  Generate share code
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="mt-5 rounded-lg border bg-slate-50 p-3">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_auto]">

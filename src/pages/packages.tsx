@@ -947,7 +947,7 @@ function CustomPackageBuilder({
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['custom-package-lab-tests'],
     queryFn: fetchLabTests,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60 * 2,
   });
   const { activeProfile, isAuthenticated, isLoading: isPatientSessionLoading } = usePatientSession();
   const [searchQuery, setSearchQuery] = useState('');

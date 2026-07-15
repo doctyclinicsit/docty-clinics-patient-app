@@ -1,0 +1,41 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2, Plus, Save, ShieldAlert, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { browserId } from '@/lib/browser-id';
+
+interface Medication { id: string; name: string; strength: string; dose: string; frequency: string; duration: string; instructions: string }
+interface Draft { chiefComplaint: string; history: string; examination: string; diagnosis: string; investigations: string; advice: string; followUp: string; privateNotes: string; medications: Medication[] }
+interface Consultation { status: 'draft' | 'approved'; draft: Draft }
+const emptyDraft: Draft = { chiefComplaint: '', history: '', examination: '', diagnosis: '', investigations: '', advice: '', followUp: '', privateNotes: '', medications: [] };
+const fields: Array<[keyof Omit<Draft, 'medications'>, string]> = [['chiefComplaint','Chief complaint'],['history','History'],['examination','Examination'],['diagnosis','Assessment / diagnosis'],['investigations','Investigations'],['advice','Advice and warning signs'],['followUp','Follow-up'],['privateNotes','Private doctor notes']];
+function profile(body: any) { return body?.patient?.patient_profile || body?.patient?.data?.patient_profile || body?.patient?.profile || body?.patient || {}; }
+
+export default function DoctorConsultationPage() {
+  const { appointmentId = '' } = useParams(); const navigate = useNavigate();
+  const [draft, setDraft] = useState<Draft>(emptyDraft); const [consultation, setConsultation] = useState<Consultation | null>(null);
+  const [appointment, setAppointment] = useState<any>(null); const [patient, setPatient] = useState<any>({});
+  const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const approved = consultation?.status === 'approved';
+  const load = useCallback(async () => { setLoading(true); try { const r = await fetch(`/api/doctor/consultation?appointmentId=${encodeURIComponent(appointmentId)}`); const b = await r.json().catch(() => null); if (!r.ok) throw new Error(b?.message || 'Unable to open consultation.'); setAppointment(b.appointment); setPatient(profile(b)); setConsultation(b.consultation); setDraft(b.consultation?.draft ? { ...emptyDraft, ...b.consultation.draft } : emptyDraft); } catch (e) { toast.error(e instanceof Error ? e.message : 'Unable to open consultation.'); } finally { setLoading(false); } }, [appointmentId]);
+  useEffect(() => { void load(); }, [load]);
+  async function save(notify = true) { setSaving(true); try { const r = await fetch('/api/doctor/consultation', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId, draft }) }); const b = await r.json().catch(() => null); if (!r.ok) throw new Error(b?.message || 'Unable to save consultation.'); setConsultation(b.consultation); if (notify) toast.success('Consultation draft saved.'); return true; } catch (e) { toast.error(e instanceof Error ? e.message : 'Unable to save consultation.'); return false; } finally { setSaving(false); } }
+  async function approve() { if (!await save(false)) return; setSaving(true); try { const r = await fetch('/api/doctor/consultation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointmentId, action: 'approve' }) }); const b = await r.json().catch(() => null); if (!r.ok) throw new Error(b?.message || 'Unable to approve consultation.'); setConsultation(b.consultation); toast.success('Consultation approved and locked.'); } catch (e) { toast.error(e instanceof Error ? e.message : 'Unable to approve consultation.'); } finally { setSaving(false); } }
+  const name = patient.fln || [patient.fn, patient.mn, patient.ln].filter(Boolean).join(' ') || 'Patient';
+  if (loading) return <div className="mx-auto max-w-6xl p-8 text-center text-muted-foreground">Loading consultation…</div>;
+  return <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6">
+    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><Button variant="outline" size="icon" onClick={() => navigate('/doctor-dashboard')}><ArrowLeft className="h-4 w-4" /></Button><div><h1 className="text-2xl font-bold">Consultation</h1><p className="text-sm text-muted-foreground">Appointment {appointmentId}</p></div></div><div className="flex gap-2"><Badge variant={approved ? 'default' : 'secondary'}>{approved ? 'Approved' : 'Draft'}</Badge>{!approved && <><Button variant="outline" disabled={saving} onClick={() => void save()}><Save className="mr-2 h-4 w-4" />Save</Button><Button disabled={saving} onClick={() => void approve()}><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button></>}</div></div>
+    <Card className="rounded-2xl"><CardContent className="grid gap-4 p-5 sm:grid-cols-4"><Info label="Patient" value={name}/><Info label="Date of birth" value={patient.dob}/><Info label="Sex" value={patient.gen}/><Info label="Appointment status" value={appointment?.status}/></CardContent></Card>
+    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><ShieldAlert className="mr-2 inline h-4 w-4" />Review identity, allergies, weight, medicine dose, frequency and duration. Approval locks this version.</div>
+    <div className="grid gap-5 lg:grid-cols-2"><div className="space-y-5">{fields.slice(0,4).map(([key,label]) => <Note key={key} label={label} value={draft[key]} disabled={approved} onChange={(value) => setDraft((v) => ({ ...v, [key]: value }))}/>)}</div><div className="space-y-5">
+      <Card className="rounded-2xl"><CardHeader className="flex-row items-center justify-between"><CardTitle className="text-base">Medications</CardTitle>{!approved && <Button size="sm" variant="outline" onClick={() => setDraft((v) => ({ ...v, medications: [...v.medications, { id: browserId(), name: '', strength: '', dose: '', frequency: '', duration: '', instructions: '' }] }))}><Plus className="mr-2 h-4 w-4" />Add</Button>}</CardHeader><CardContent className="space-y-4">{!draft.medications.length && <p className="text-sm text-muted-foreground">No medications added.</p>}{draft.medications.map((med,index) => <div key={med.id} className="space-y-3 rounded-xl border p-4"><div className="flex justify-between"><b>Medicine {index+1}</b>{!approved && <Button size="icon" variant="ghost" onClick={() => setDraft((v) => ({ ...v, medications: v.medications.filter((x) => x.id !== med.id) }))}><Trash2 className="h-4 w-4"/></Button>}</div><div className="grid gap-3 sm:grid-cols-2">{([['name','Medicine'],['strength','Strength'],['dose','Dose'],['frequency','Frequency'],['duration','Duration'],['instructions','Instructions']] as const).map(([key,label]) => <div key={key}><Label>{label}{['name','dose','frequency','duration'].includes(key) ? ' *' : ''}</Label><Input disabled={approved} value={med[key]} onChange={(e) => setDraft((v) => ({ ...v, medications: v.medications.map((x) => x.id === med.id ? { ...x, [key]: e.target.value } : x) }))}/></div>)}</div></div>)}</CardContent></Card>
+      {fields.slice(4).map(([key,label]) => <Note key={key} label={label} value={draft[key]} disabled={approved} onChange={(value) => setDraft((v) => ({ ...v, [key]: value }))}/>)}</div></div>
+  </div>;
+}
+function Info({label,value}:{label:string;value?:string}) { return <div><p className="text-xs text-muted-foreground">{label}</p><p className="font-semibold">{value || 'Not available'}</p></div>; }
+function Note({label,value,disabled,onChange}:{label:string;value:string;disabled:boolean;onChange:(value:string)=>void}) { return <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{label}</CardTitle></CardHeader><CardContent><Textarea className="min-h-28" disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)}/></CardContent></Card>; }

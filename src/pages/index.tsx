@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'motion/react';
@@ -255,6 +255,7 @@ function DoctorBookingSection({
 export default function HomePage() {
   const { activeProfile, profiles, isAuthenticated, selectProfile } = usePatientSession();
   const [isLeadDialogOpen, setIsLeadDialogOpen] = useState(false);
+  const [isSchoolCollabOpen, setIsSchoolCollabOpen] = useState(false);
   const [heroImages] = useState(getRandomClinicImages);
   const [selectedService, setSelectedService] = useState<string>('');
   const [leadName, setLeadName] = useState('');
@@ -296,19 +297,46 @@ export default function HomePage() {
     isLoading: doctorsLoading,
     isError: doctorsError,
     refetch: refetchDoctors,
-  } = useDoctorList({ top: 12 });
+  } = useDoctorList({ top: 100 });
   const mostExperiencedDoctors = useMemo(
-    () =>
-      [...(doctors || [])]
-        .sort((firstDoctor, secondDoctor) => {
-          const experienceDifference =
-            (secondDoctor.experienceYears || 0) - (firstDoctor.experienceYears || 0);
-          if (experienceDifference !== 0) return experienceDifference;
-          return firstDoctor.name1.localeCompare(secondDoctor.name1);
-        })
-        .slice(0, 6),
+    () => {
+      const sortedDoctors = [...(doctors || [])].sort((firstDoctor, secondDoctor) => {
+        const experienceDifference =
+          (secondDoctor.experienceYears || 0) - (firstDoctor.experienceYears || 0);
+        if (experienceDifference !== 0) return experienceDifference;
+        return firstDoctor.name1.localeCompare(secondDoctor.name1);
+      });
+      const selectedDoctors: Doctor[] = [];
+      const selectedDoctorIds = new Set<string>();
+      const representedSpecialties = new Set<string>();
+
+      sortedDoctors.forEach((doctor) => {
+        const specialtyKey = (doctor.specialty || 'General Medicine').trim().toLowerCase();
+        if (representedSpecialties.has(specialtyKey)) return;
+        selectedDoctors.push(doctor);
+        selectedDoctorIds.add(doctor.id);
+        representedSpecialties.add(specialtyKey);
+      });
+
+      sortedDoctors.forEach((doctor) => {
+        if (selectedDoctors.length >= 6) return;
+        if (selectedDoctorIds.has(doctor.id)) return;
+        selectedDoctors.push(doctor);
+        selectedDoctorIds.add(doctor.id);
+      });
+
+      return selectedDoctors.slice(0, 6);
+    },
     [doctors]
   );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsSchoolCollabOpen(true);
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const openLeadDialog = (service: string) => {
     setSelectedService(service);
@@ -719,10 +747,10 @@ export default function HomePage() {
             className="text-center mb-12"
           >
             <motion.h2 variants={itemVariants} className="text-3xl md:text-4xl font-bold mb-4">
-              Our <span className="text-primary">Doctors</span>
+              Experienced Doctors by <span className="text-primary">Speciality</span>
             </motion.h2>
             <motion.p variants={itemVariants} className="text-muted-foreground max-w-2xl mx-auto">
-              Experienced and qualified medical professionals ready to care for you
+              A balanced mix of senior doctors, with the most experienced doctor from each speciality shown first.
             </motion.p>
           </motion.div>
 
@@ -1206,6 +1234,117 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      <Dialog open={isSchoolCollabOpen} onOpenChange={setIsSchoolCollabOpen}>
+        <DialogContent className="max-h-[calc(100svh-1rem)] overflow-y-auto p-0 sm:max-w-4xl">
+          <div className="relative overflow-hidden bg-[#f6fbfd]">
+            <div
+              className="absolute inset-0 bg-[url('/school-camp-healthy-kids-hero.png')] bg-[length:auto_82%] bg-[position:right_50%_top_82px] bg-no-repeat opacity-100 md:bg-[length:auto_98%] md:bg-[position:right_-34px_top_52px]"
+              aria-hidden="true"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(105deg,#ffffff_0%,#ffffff_37%,rgba(255,255,255,0.86)_55%,rgba(255,255,255,0.12)_100%)]" />
+            <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(90deg,#fe065c_0%,#0bb8fc_54%,rgba(11,184,252,0)_100%)] opacity-95" />
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(0deg,#fff6fa_0%,rgba(246,251,253,0)_100%)]" />
+            <div className="absolute bottom-0 right-0 h-24 w-full bg-[linear-gradient(135deg,rgba(254,6,92,0.92)_0%,rgba(11,184,252,0.88)_55%,rgba(255,255,255,0)_56%)] opacity-80" />
+            <div className="relative p-6 md:p-7">
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-white/70 bg-white/88 p-3 shadow-lg shadow-[#082f49]/10 backdrop-blur">
+                <img src="/docty-logo-full.png" alt="Docty Clinics" className="h-11 w-auto" />
+                <div className="hidden h-10 w-px bg-[#dceaf1] sm:block" />
+                <img src="/sri-gayathri-techno-school-logo.png" alt="Sri Gayathri Techno Schools" className="h-11 w-auto" />
+              </div>
+
+              <div className="mt-7 min-h-[520px] md:min-h-[560px]">
+                <div className="max-w-[470px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-left text-4xl font-black leading-tight tracking-normal md:text-6xl">
+                      <span className="block text-[#fe065c] drop-shadow-sm">Healthy Kids</span>
+                      <span className="block text-[#0b7fae] drop-shadow-sm">Happy Futures</span>
+                    </DialogTitle>
+                  </DialogHeader>
+                  <Badge className="mt-4 rounded-full bg-[#082f49] px-4 py-1.5 text-sm text-white shadow-lg shadow-[#082f49]/20 hover:bg-[#082f49]">
+                    5-week interactive health journey
+                  </Badge>
+                  <p className="mt-5 max-w-md text-base font-medium leading-7 text-[#082f49]">
+                    A Health & Wellness Camp for <span className="font-bold text-[#fe065c]">Sri Gayathri Techno School Students</span>, powered by Docty Clinics.
+                  </p>
+
+                  <div className="mt-5 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+                    {[
+                      { icon: Stethoscope, title: 'Expert Assessments' },
+                      { icon: FileText, title: 'AI Reports' },
+                      { icon: Heart, title: 'Parent Education' },
+                      { icon: BadgeCheck, title: 'Special Offers' },
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.title} className="rounded-md border border-white/70 bg-white/88 p-3 shadow-lg shadow-[#082f49]/10 backdrop-blur">
+                          <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-[#fe065c] text-white shadow-md shadow-[#fe065c]/25">
+                            <Icon className="size-5" />
+                          </div>
+                          <p className="mt-2 text-[11px] font-bold leading-tight text-[#082f49]">{item.title}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-2 gap-2">
+                    {[
+                      { icon: Calendar, title: '5 Saturdays' },
+                      { icon: Building2, title: 'On Campus Camp' },
+                      { icon: Activity, title: 'Live Assessment' },
+                      { icon: Sparkles, title: 'AI Reports' },
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.title} className="flex items-center gap-2 rounded-md bg-[#082f49]/92 p-2 text-white shadow-lg shadow-[#082f49]/15 ring-1 ring-white/30 backdrop-blur">
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#0bb8fc] text-white">
+                            <Icon className="size-4" />
+                          </div>
+                          <p className="text-xs font-black leading-snug">{item.title}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-5 rounded-md border border-white/70 bg-white/92 p-3 shadow-xl shadow-[#fe065c]/10 backdrop-blur">
+                    <p className="text-sm font-black text-[#fe065c]">Exclusive Total Care Offer</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="rounded-md bg-[#eaf8fe] p-3 shadow-inner">
+                        <p className="text-xs font-bold text-[#082f49]">Students & Staff</p>
+                        <p className="text-xs font-bold text-[#8aa0ad] line-through">Rs 999/-</p>
+                        <p className="text-2xl font-black text-[#0b7fae]">Rs 199/-</p>
+                      </div>
+                      <div className="rounded-md bg-[#fff6fa] p-3 shadow-inner">
+                        <p className="text-xs font-bold text-[#082f49]">Family Members</p>
+                        <p className="text-xs font-bold text-[#8aa0ad] line-through">Rs 999/-</p>
+                        <p className="text-2xl font-black text-[#fe065c]">Rs 399/-</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 rounded-md bg-white/80 p-4 shadow-lg shadow-[#082f49]/10 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-black text-[#082f49]">Caring today. Healthier tomorrow.</p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Button asChild className="rounded-full bg-[#fe065c] shadow-lg shadow-[#fe065c]/25 hover:bg-[#d9044f]">
+                    <Link to="/school-camp-collaboration" onClick={() => setIsSchoolCollabOpen(false)}>
+                      View Details
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="rounded-full border-[#0b7fae] bg-white/80 text-[#0b7fae] hover:bg-[#eaf8fe]">
+                    <a href="tel:+919989804888">
+                      <Phone className="mr-2 h-4 w-4" />
+                      Call Docty
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Lead Capture Dialog */}
       <Dialog open={isLeadDialogOpen} onOpenChange={setIsLeadDialogOpen}>

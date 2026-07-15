@@ -6,6 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      "/consultation-relay": {
+        target: "http://127.0.0.1:4174",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/consultation-relay/, ""),
+      },
       "/eka-public": {
         target: "https://www.eka.care",
         changeOrigin: true,

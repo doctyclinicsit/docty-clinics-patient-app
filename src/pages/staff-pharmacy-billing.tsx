@@ -911,7 +911,7 @@ export default function StaffPharmacyBillingPage() {
       if (!response.ok) throw new Error(body?.message || 'Unable to send OTP.');
       setStaffMobile(normalizedMobile);
       setAuthStep('otp');
-      toast.success('OTP sent successfully.');
+      toast.success(body?.message || 'WhatsApp OTP sent successfully.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to send OTP.');
     } finally {
@@ -3154,13 +3154,13 @@ export default function StaffPharmacyBillingPage() {
                   </div>
                   <Button type="submit" className="w-full rounded-full" disabled={isSendingStaffOtp}>
                     {isSendingStaffOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send OTP
+                    Send WhatsApp OTP
                   </Button>
                 </form>
               ) : (
                 <form className="space-y-4" onSubmit={verifyStaffOtp}>
                   <div className="rounded-lg bg-slate-50 p-4 text-sm text-muted-foreground">
-                    OTP sent to +91 ******{staffMobile.slice(-4)}.
+                    WhatsApp OTP sent to +91 ******{staffMobile.slice(-4)}.
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pharmacy-staff-otp">4-digit OTP</Label>

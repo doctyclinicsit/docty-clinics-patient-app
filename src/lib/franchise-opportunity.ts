@@ -975,7 +975,7 @@ export function monthlyExpenseForMonth(expense: FranchiseExpense, month: number)
     return Math.round(ownPharmacyRevenueForMonth(month) * (1 - ownPharmacyNetRevenueShare));
   }
   const escalation = Math.max(0, Number(expense.annualEscalation || 0));
-  const elapsedYears = Math.max(0, (month - 1) / 12);
+  const elapsedYears = Math.max(0, Math.floor((month - 1) / 12));
   return Math.round(Number(expense.amount || 0) * ((1 + escalation) ** elapsedYears));
 }
 

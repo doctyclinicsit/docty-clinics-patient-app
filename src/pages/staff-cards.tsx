@@ -5,6 +5,7 @@ import {
   CreditCard,
   Database,
   Download,
+  GraduationCap,
   IdCard,
   LineChart,
   ListChecks,
@@ -16,6 +17,8 @@ import {
   Share2,
   ShieldCheck,
   MessageCircle,
+  Megaphone,
+  UserCog,
   ReceiptText,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -688,6 +691,7 @@ export default function StaffCardsPage() {
   const [otp, setOtp] = useState('');
   const [staffName, setStaffName] = useState('');
   const [isStaffAdmin, setIsStaffAdmin] = useState(false);
+  const [moduleAccess, setModuleAccess] = useState<Record<string, boolean>>({});
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null);
   const [mobile, setMobile] = useState('');
   const [subscribers, setSubscribers] = useState<StaffSubscriber[]>([]);
@@ -722,15 +726,18 @@ export default function StaffCardsPage() {
           setStaffName(body?.staff?.name || '');
           setStaffMobile(body?.staff?.mobile || '');
           setIsStaffAdmin(Boolean(body?.staff?.isAdmin));
+          setModuleAccess(body?.staff?.moduleAccess || {});
           setSessionExpiresAt(body?.expiresAt || null);
         } else {
           setIsStaffAdmin(false);
+          setModuleAccess({});
           setSessionExpiresAt(null);
         }
       })
       .catch(() => {
         setIsAuthenticated(false);
         setIsStaffAdmin(false);
+        setModuleAccess({});
         setSessionExpiresAt(null);
       })
       .finally(() => setIsCheckingSession(false));
@@ -778,7 +785,7 @@ export default function StaffCardsPage() {
       setStaffMobile(normalizedMobile);
       setStaffName(body?.staffName || '');
       setAuthStep('otp');
-      toast.success('OTP sent successfully');
+      toast.success(body?.message || 'WhatsApp OTP sent successfully');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to send OTP.');
     } finally {
@@ -806,6 +813,7 @@ export default function StaffCardsPage() {
       setStaffName(body?.staff?.name || staffName);
       setStaffMobile(body?.staff?.mobile || staffMobile);
       setIsStaffAdmin(Boolean(body?.staff?.isAdmin));
+      setModuleAccess(body?.staff?.moduleAccess || {});
       setSessionExpiresAt(body?.expiresAt || Math.floor(Date.now() / 1000) + 30 * 60);
       setOtp('');
       toast.success('Staff access verified');
@@ -820,6 +828,7 @@ export default function StaffCardsPage() {
     await fetch('/api/staff/logout', { method: 'POST' }).catch(() => null);
     setIsAuthenticated(false);
     setIsStaffAdmin(false);
+    setModuleAccess({});
     setSessionExpiresAt(null);
     setSubscribers([]);
     setRecentLogs([]);
@@ -918,13 +927,13 @@ export default function StaffCardsPage() {
                 </div>
                 <Button type="submit" className="w-full rounded-full" disabled={isSendingOtp}>
                   {isSendingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Send OTP
+                  Send WhatsApp OTP
                 </Button>
               </form>
             ) : (
               <form className="space-y-4" onSubmit={verifyStaffOtp}>
                 <div className="rounded-2xl bg-slate-50 p-4 text-sm text-muted-foreground">
-                  OTP sent to +91 ••••••{staffMobile.slice(-4)}
+                  WhatsApp OTP sent to +91 ******{staffMobile.slice(-4)}
                   <span className="block font-semibold text-foreground">
                     Staff access will be verified with Eka after OTP confirmation.
                   </span>
@@ -985,38 +994,56 @@ export default function StaffCardsPage() {
               <IdCard className="mr-2 h-4 w-4" />
               Cards
             </Button>
-            <Button asChild variant="outline" className="rounded-full bg-white">
+            {(moduleAccess.pharmacy_billing ?? true) && <Button asChild variant="outline" className="rounded-full bg-white">
               <Link to="/staff/pharmacy-billing">
                 <ReceiptText className="mr-2 h-4 w-4" />
                 Pharmacy Billing
               </Link>
-            </Button>
-            <Button asChild variant="outline" className="rounded-full bg-white">
+            </Button>}
+            {(moduleAccess.leads ?? true) && <Button asChild variant="outline" className="rounded-full bg-white">
               <Link to="/staff/leads">
                 <ListChecks className="mr-2 h-4 w-4" />
                 Leads
               </Link>
-            </Button>
+            </Button>}
+            {(moduleAccess.social_media ?? isStaffAdmin) && <Button asChild variant="outline" className="rounded-full bg-white">
+              <Link to="/staff/social-media">
+                <Megaphone className="mr-2 h-4 w-4" />
+                Social Media
+              </Link>
+            </Button>}
+            {(moduleAccess.corporate_camps ?? true) && <Button asChild variant="outline" className="rounded-full bg-white">
+              <Link to="/Corporate/camps">
+                <GraduationCap className="mr-2 h-4 w-4" />
+                Corporate Camps
+              </Link>
+            </Button>}
             {isStaffAdmin && (
               <>
-                <Button asChild variant="outline" className="rounded-full bg-white">
+                {(moduleAccess.doctor_payout ?? true) && <Button asChild variant="outline" className="rounded-full bg-white">
                   <Link to="/staff/doctor-payout">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Doctor Payout
                   </Link>
-                </Button>
-                <Button asChild variant="outline" className="rounded-full bg-white">
+                </Button>}
+                {(moduleAccess.franchise_dashboard ?? true) && <Button asChild variant="outline" className="rounded-full bg-white">
                   <Link to="/franchise">
                     <LineChart className="mr-2 h-4 w-4" />
                     Franchise Dashboard
                   </Link>
-                </Button>
-                <Button asChild variant="outline" className="rounded-full bg-white">
+                </Button>}
+                {(moduleAccess.system_logs ?? true) && <Button asChild variant="outline" className="rounded-full bg-white">
                   <Link to="/staff/system-logs">
                     <Database className="mr-2 h-4 w-4" />
                     System Logs
                   </Link>
-                </Button>
+                </Button>}
+                {(moduleAccess.staff_administration ?? true) && <Button asChild variant="outline" className="rounded-full bg-white">
+                  <Link to="/staff/administration">
+                    <UserCog className="mr-2 h-4 w-4" />
+                    Administration
+                  </Link>
+                </Button>}
               </>
             )}
           </div>

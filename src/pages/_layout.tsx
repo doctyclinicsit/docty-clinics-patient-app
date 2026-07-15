@@ -8,11 +8,13 @@ import { PatientSessionProvider } from '@/lib/patient-session-context';
 export default function Layout() {
   const { pathname, search } = useLocation();
   const isStaffPage = pathname.startsWith('/staff');
+  const isCorporatePage = pathname.toLowerCase().startsWith('/corporate');
+  const isCampPage = pathname.toLowerCase().startsWith('/camps');
   const isExecutivePage = pathname.startsWith('/executive');
   const isFranchisePage = pathname === '/franchise' || pathname.startsWith('/franchise/opportunity/');
   const isDoctorDashboard = pathname === '/doctor-dashboard';
   const isPatientDeliveryLink = pathname.startsWith('/pharmacy/delivery/');
-  const isInternalPage = isStaffPage || isExecutivePage || isFranchisePage || isDoctorDashboard;
+  const isInternalPage = isStaffPage || isCorporatePage || isCampPage || isExecutivePage || isFranchisePage || isDoctorDashboard;
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });

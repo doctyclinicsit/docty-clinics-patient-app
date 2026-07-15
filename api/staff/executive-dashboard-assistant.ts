@@ -1,8 +1,8 @@
 import { readAdminStaffSession } from '../../server/staff-admin.js';
-
-const EXECUTIVE_DASHBOARD_SHARE_TOKEN =
-  process.env.EXECUTIVE_DASHBOARD_SHARE_TOKEN || 'dcty-investor-2026-6fb7b688c6fd4b8fbf61a95e8c1b35d2';
-const EXECUTIVE_DASHBOARD_SHARE_CODE = process.env.EXECUTIVE_DASHBOARD_SHARE_CODE || '742619';
+import {
+  EXECUTIVE_DASHBOARD_SHARE_TOKEN,
+  verifyExecutiveDashboardShareCode,
+} from '../../server/executive-dashboard-share.js';
 
 function text(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
@@ -25,7 +25,7 @@ export default async function handler(request: any, response: any) {
   const shareToken = text(request.body?.shareToken);
   const shareCode = text(request.body?.shareCode);
   const hasShareToken = shareToken && shareToken === EXECUTIVE_DASHBOARD_SHARE_TOKEN;
-  const hasShareAccess = hasShareToken && shareCode === EXECUTIVE_DASHBOARD_SHARE_CODE;
+  const hasShareAccess = await verifyExecutiveDashboardShareCode(shareToken, shareCode);
   if (adminSession.status !== 200 && hasShareToken && !hasShareAccess) {
     return response.status(403).json({ message: 'Please enter the 6-digit investor access code.' });
   }

@@ -176,6 +176,8 @@ interface EkaPatientSummary {
   fln?: string;
   fn?: string;
   ln?: string;
+  dob?: string;
+  gen?: string;
 }
 
 interface EkaCreatePatientInput {
@@ -1025,28 +1027,170 @@ export async function getEkaAppointmentSlots(
   );
 }
 
+function normalizePatientName(value?: string) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/^(mr|mrs|ms|miss|master|baby|dr)\.?\s+/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function patientNameTokens(value: string) {
+  return normalizePatientName(value)
+    .split(' ')
+    .filter((token) => token.length > 1);
+}
+
+function namesLikelyMatch(candidateName: string, requestedName: string) {
+  const candidate = normalizePatientName(candidateName);
+  const requested = normalizePatientName(requestedName);
+  if (!candidate || !requested) return false;
+  if (candidate === requested) return true;
+
+  const candidateTokens = new Set(patientNameTokens(candidate));
+  const requestedTokens = patientNameTokens(requested);
+  if (!candidateTokens.size || !requestedTokens.length) return false;
+
+  const matchingTokens = requestedTokens.filter((token) => candidateTokens.has(token)).length;
+  const matchRatio = matchingTokens / Math.max(requestedTokens.length, candidateTokens.size);
+  return matchingTokens >= 1 && matchRatio >= 0.6;
+}
+
+function normalizeGender(value?: string) {
+  const gender = String(value || '').trim().toUpperCase();
+  if (gender.startsWith('M')) return 'M';
+  if (gender.startsWith('F')) return 'F';
+  if (gender.startsWith('O')) return 'O';
+  return '';
+}
+
+function patientDemographicsLikelyMatch(
+  patient: EkaPatientSummary,
+  options: { dob?: string; gender?: string }
+) {
+  const requestedDob = String(options.dob || '').slice(0, 10);
+  const patientDob = String(patient.dob || '').slice(0, 10);
+  if (requestedDob && patientDob && requestedDob !== patientDob) return false;
+
+  const requestedGender = normalizeGender(options.gender);
+  const patientGender = normalizeGender(patient.gen);
+  if (requestedGender && patientGender && requestedGender !== patientGender) return false;
+
+  return true;
+}
+
+function extractPatientId(profile: any) {
+  const details = profile?.patient_profile || profile?.data || profile || {};
+  return String(
+    profile?.patient_id ||
+      profile?.oid ||
+      details?.patient_id ||
+      details?.oid ||
+      ''
+  ).trim();
+}
+
+function normalizeEkaPatientSummary(profile: any): EkaPatientSummary | undefined {
+  const details = profile?.patient_profile || profile?.data || profile || {};
+  const oid = extractPatientId(profile);
+  if (!oid) return undefined;
+
+  const fln =
+    profile?.name ||
+    details?.fln ||
+    [details?.first_name || details?.fn, details?.middle_name || details?.mn, details?.last_name || details?.ln]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+  return {
+    oid,
+    username: String(profile?.username || details?.username || ''),
+    mobile: String(profile?.mobile || details?.mobile || ''),
+    fln,
+    fn: String(details?.first_name || details?.fn || ''),
+    ln: String(details?.last_name || details?.ln || ''),
+    dob: String(details?.dob || ''),
+    gen: String(details?.gender || details?.gen || ''),
+  };
+}
+
+function extractPatientsFromResponse(body: any) {
+  const rawProfiles =
+    body?.data?.profiles ||
+    body?.profiles ||
+    body?.data ||
+    body?.patients ||
+    body?.results ||
+    (Array.isArray(body) ? body : extractPatientId(body) ? [body] : []);
+
+  return (Array.isArray(rawProfiles) ? rawProfiles : [rawProfiles])
+    .map(normalizeEkaPatientSummary)
+    .filter(Boolean) as EkaPatientSummary[];
+}
+
+async function tryFindEkaPatients(path: string) {
+  try {
+    const body = await ekaJsonFetch<any>(path);
+    return extractPatientsFromResponse(body);
+  } catch {
+    return [];
+  }
+}
+
+async function findEkaPatientsByMobile(normalizedPhone: string) {
+  const byMobileQuery = new URLSearchParams({
+    mob: `+91${normalizedPhone}`,
+    full_profile: 'true',
+  });
+  const searchQuery = new URLSearchParams({
+    prefix: normalizedPhone,
+    limit: '25',
+    select: 'dob,gen,mobile',
+  });
+  const plusSearchQuery = new URLSearchParams({
+    prefix: `+91${normalizedPhone}`,
+    limit: '25',
+    select: 'dob,gen,mobile',
+  });
+
+  const results = (
+    await Promise.all([
+      tryFindEkaPatients(`/profiles/v1/patient/by-mobile/?${byMobileQuery.toString()}`),
+      tryFindEkaPatients(`/profiles/v1/patient/search?${searchQuery.toString()}`),
+      tryFindEkaPatients(`/profiles/v1/patient/search?${plusSearchQuery.toString()}`),
+    ])
+  ).flat();
+  const seen = new Set<string>();
+
+  return results.filter((patient) => {
+    const patientPhone = normalizePhone(patient.mobile || patient.username || '');
+    if ((patientPhone && patientPhone !== normalizedPhone) || seen.has(patient.oid)) return false;
+    seen.add(patient.oid);
+    return true;
+  });
+}
+
 export async function findEkaPatientByMobileAndName(
   mobile: string,
-  fullName: string
+  fullName: string,
+  options: { dob?: string; gender?: string } = {}
 ): Promise<EkaPatientSummary | undefined> {
   const normalizedPhone = normalizePhone(mobile);
-  const normalizedName = fullName.trim().toLowerCase();
-  const query = new URLSearchParams({
-    prefix: normalizedPhone,
-    limit: '10',
-    select: 'dob,gen',
-  });
-  const patients = await ekaJsonFetch<EkaPatientSummary[]>(
-    `/profiles/v1/patient/search?${query.toString()}`
-  );
+  const normalizedName = normalizePatientName(fullName);
+  const patients = await findEkaPatientsByMobile(normalizedPhone);
 
   return patients.find((patient) => {
     const patientPhone = normalizePhone(patient.mobile || patient.username || '');
-    const patientName = (patient.fln || `${patient.fn || ''} ${patient.ln || ''}`).trim().toLowerCase();
+    const patientName = normalizePatientName(
+      patient.fln || `${patient.fn || ''} ${patient.ln || ''}`
+    );
 
     return (
-      patientPhone === normalizedPhone &&
-      (patientName.includes(normalizedName) || normalizedName.includes(patientName))
+      (!patientPhone || patientPhone === normalizedPhone) &&
+      namesLikelyMatch(patientName, normalizedName) &&
+      patientDemographicsLikelyMatch(patient, options)
     );
   });
 }
@@ -1078,7 +1222,10 @@ export async function createEkaPatient(input: EkaCreatePatientInput): Promise<Ek
 }
 
 export async function findOrCreateEkaPatient(input: EkaCreatePatientInput): Promise<EkaPatientSummary> {
-  const existingPatient = await findEkaPatientByMobileAndName(input.mobile, input.fullName);
+  const existingPatient = await findEkaPatientByMobileAndName(input.mobile, input.fullName, {
+    dob: input.dob,
+    gender: input.gender,
+  });
   return existingPatient || createEkaPatient(input);
 }
 

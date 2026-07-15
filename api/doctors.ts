@@ -1,20 +1,11 @@
-const EKA_API_BASE_URL = 'https://api.eka.care';
-
-async function ekaRequest(path: string, token: string) {
-  const response = await fetch(`${EKA_API_BASE_URL}${path}`, {
-    headers: {
-      auth: token,
-      Accept: 'application/json',
-    },
-  });
-
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(body?.message || body?.error || response.statusText);
-  }
-
-  return body;
-}
+import {
+  doctorsFromSnapshot,
+  fetchEkaDoctorSnapshot,
+  isFreshDoctorSnapshot,
+  parseDoctorTop,
+  readDoctorSnapshot,
+  writeDoctorSnapshot,
+} from './_lib/doctor-cache.js';
 
 export default async function handler(request: any, response: any) {
   const token = process.env.EKA_AUTH_TOKEN;
@@ -23,45 +14,46 @@ export default async function handler(request: any, response: any) {
     return response.status(500).json({ message: 'EKA_AUTH_TOKEN is not configured.' });
   }
 
+  const requestedTop = parseDoctorTop(request.query?.top);
+
   try {
-    const requestedTop = Number(request.query?.top);
-    const top = Number.isFinite(requestedTop) && requestedTop > 0
-      ? Math.min(requestedTop, 30)
-      : 30;
-    const entitiesResponse = await ekaRequest('/dr/v1/business/entities', token);
-    const entities = entitiesResponse.data || entitiesResponse;
-    const summaries = (Array.isArray(entities.doctors) ? entities.doctors : []).slice(0, top);
-    const doctors = [];
-    const batchSize = 6;
+    const cachedSnapshot = await readDoctorSnapshot();
 
-    for (let index = 0; index < summaries.length; index += batchSize) {
-      const batch = summaries.slice(index, index + batchSize);
-      const results = await Promise.all(
-        batch.map(async (summary: any) => {
-          const [profileResult, servicesResult] = await Promise.allSettled([
-            ekaRequest(`/dr/v1/doctor/${summary.doctor_id}`, token),
-            ekaRequest(`/dr/v1/doctor/service/${summary.doctor_id}`, token),
-          ]);
-
-          return {
-            summary,
-            profile: profileResult.status === 'fulfilled' ? profileResult.value : null,
-            services: servicesResult.status === 'fulfilled'
-              ? servicesResult.value?.data?.services
-              : [],
-          };
-        })
-      );
-
-      doctors.push(...results);
+    if (isFreshDoctorSnapshot(cachedSnapshot)) {
+      response.setHeader('Cache-Control', 'public, s-maxage=7200, stale-while-revalidate=86400');
+      response.setHeader('X-Doctors-Source', 'blob-cache');
+      return response.status(200).json({
+        doctors: doctorsFromSnapshot(cachedSnapshot, requestedTop),
+        syncedAt: cachedSnapshot.syncedAt,
+        source: 'cache',
+      });
     }
 
-    response.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-    return response.status(200).json({ doctors });
+    const freshSnapshot = await fetchEkaDoctorSnapshot(token);
+    await writeDoctorSnapshot(freshSnapshot).catch(() => undefined);
+
+    response.setHeader('Cache-Control', 'public, s-maxage=7200, stale-while-revalidate=86400');
+    response.setHeader('X-Doctors-Source', 'eka-refresh');
+    return response.status(200).json({
+      doctors: doctorsFromSnapshot(freshSnapshot, requestedTop),
+      syncedAt: freshSnapshot.syncedAt,
+      source: 'eka',
+    });
   } catch (error) {
+    const staleSnapshot = await readDoctorSnapshot();
+    if (staleSnapshot?.doctors?.length) {
+      response.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+      response.setHeader('X-Doctors-Source', 'stale-blob-cache');
+      response.setHeader('Warning', '110 - "Serving stale doctors snapshot because Eka refresh failed"');
+      return response.status(200).json({
+        doctors: doctorsFromSnapshot(staleSnapshot, requestedTop),
+        syncedAt: staleSnapshot.syncedAt,
+        source: 'stale-cache',
+      });
+    }
+
     return response.status(502).json({
       message: error instanceof Error ? error.message : 'Unable to load Eka doctors.',
     });
   }
 }
-

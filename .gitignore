@@ -9,7 +9,7 @@ public/*.CR2
 .env.*
 !.env.example
 *.log
-
-
-.vercel
-.env*
+*.zip
+coverage/
+.DS_Store
+Thumbs.db
