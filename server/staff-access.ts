@@ -7,6 +7,7 @@ export const STAFF_ADMIN_COOKIE = 'docty_staff_admin_session';
 const STAFF_ADMIN_PURPOSE = 'docty:staff-admin-session:v1';
 
 export const STAFF_MODULES = [
+  { key: 'clinic_management', label: 'Clinic Management', description: 'Manage appointments, walk-ins, and clinic queues.' },
   { key: 'cards', label: 'Subscriber Cards', description: 'View subscribers and issue Docty cards.' },
   { key: 'pharmacy_billing', label: 'Pharmacy Billing', description: 'Create and manage pharmacy bills.' },
   { key: 'leads', label: 'Leads', description: 'View and manage clinic leads.' },
@@ -20,7 +21,7 @@ export const STAFF_MODULES = [
 
 export type StaffModuleKey = typeof STAFF_MODULES[number]['key'];
 
-const normalDefaults = new Set<StaffModuleKey>(['cards', 'pharmacy_billing', 'leads', 'corporate_camps']);
+const normalDefaults = new Set<StaffModuleKey>(['clinic_management', 'cards', 'pharmacy_billing', 'leads', 'corporate_camps']);
 let ensured = false;
 
 function connectionString() {

@@ -13,3 +13,5 @@ public/*.CR2
 coverage/
 .DS_Store
 Thumbs.db
+
+.vercel

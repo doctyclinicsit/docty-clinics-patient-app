@@ -1,5 +1,6 @@
 import { readStaffSession, staffSessionSecret } from '../../server/staff-session.js';
 import { getStaffModuleAccess } from '../../server/staff-access.js';
+import { findEkaStaffUserByMobile } from '../../server/eka-staff.js';
 
 export default async function handler(request: any, response: any) {
   response.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -15,15 +16,17 @@ export default async function handler(request: any, response: any) {
   const session = readStaffSession(request.headers.cookie, secret);
   if (!session) return response.status(401).json({ authenticated: false });
   const moduleAccess = await getStaffModuleAccess(session);
+  const ekaStaff = await findEkaStaffUserByMobile(session.mobile).catch(() => undefined);
 
   return response.status(200).json({
     authenticated: true,
     expiresAt: session.expiresAt,
     staff: {
       mobile: session.mobile,
-      name: session.name || '',
-      role: session.staffRole || '',
+      name: ekaStaff?.name || session.name || '',
+      role: ekaStaff?.role || session.staffRole || '',
       isAdmin: Boolean(session.isAdmin),
+      assignedClinics: ekaStaff?.assignedClinics || session.assignedClinics || [],
       moduleAccess,
     },
   });

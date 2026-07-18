@@ -11,6 +11,7 @@ export interface StaffSession {
   name?: string;
   staffRole?: string;
   isAdmin?: boolean;
+  assignedClinics?: Array<{ id: string; name: string }>;
 }
 
 export const STAFF_SESSION_COOKIE = 'docty_staff_session';
@@ -33,7 +34,13 @@ export function clearStaffSessionCookie() {
 
 export function createStaffSessionToken(
   secret: string,
-  staff: { mobile: string; name?: string; staffRole?: string; isAdmin?: boolean },
+  staff: {
+    mobile: string;
+    name?: string;
+    staffRole?: string;
+    isAdmin?: boolean;
+    assignedClinics?: Array<{ id: string; name: string }>;
+  },
   maxAgeSeconds = 30 * 60
 ) {
   const expiresAt = Math.floor(Date.now() / 1000) + maxAgeSeconds;
@@ -47,6 +54,7 @@ export function createStaffSessionToken(
         name: staff.name,
         staffRole: staff.staffRole,
         isAdmin: Boolean(staff.isAdmin),
+        assignedClinics: staff.assignedClinics || [],
       },
       secret,
       STAFF_SESSION_PURPOSE

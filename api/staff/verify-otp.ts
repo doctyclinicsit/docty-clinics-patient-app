@@ -55,6 +55,7 @@ export default async function handler(request: any, response: any) {
       name: staffUser.name,
       staffRole: staffUser.role,
       isAdmin: isEkaStaffAdmin(staffUser),
+      assignedClinics: staffUser.assignedClinics || [],
     });
     const moduleAccess = await getStaffModuleAccess({ mobile, isAdmin: isEkaStaffAdmin(staffUser) });
     response.setHeader('Set-Cookie', createStaffSessionCookie(session.token, session.maxAge));
@@ -66,6 +67,7 @@ export default async function handler(request: any, response: any) {
         mobile,
         role: staffUser.role || '',
         isAdmin: isEkaStaffAdmin(staffUser),
+        assignedClinics: staffUser.assignedClinics || [],
         moduleAccess,
       },
     });

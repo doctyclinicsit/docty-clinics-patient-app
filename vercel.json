@@ -35,6 +35,7 @@
     { "source": "/executive/dashboard", "destination": "/index.html" },
     { "source": "/executive/dashboard/share/:token", "destination": "/index.html" },
     { "source": "/staff", "destination": "/index.html" },
+    { "source": "/staff/clinic-management", "destination": "/index.html" },
     { "source": "/staff/cards", "destination": "/index.html" },
     { "source": "/staff/pharmacy-billing", "destination": "/index.html" },
     { "source": "/staff/leads", "destination": "/index.html" },

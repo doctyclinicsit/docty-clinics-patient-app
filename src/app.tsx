@@ -59,6 +59,7 @@ function App() {
             <Routes>
               <Route path="doctor-consultation/:appointmentId" element={<DoctorConsultationPage />} />
               <Route path="consultation/front-desk" element={<ConsultationFrontDeskPage />} />
+              <Route path="staff/clinic-management" element={<ConsultationFrontDeskPage />} />
               <Route path="consultation/tablet" element={<ConsultationRoomTabletPage />} />
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
